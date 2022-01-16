@@ -11,13 +11,11 @@ const nfKeyContract = new ethers.Contract(
 const verifyWallet = async (req, res, next) => {
   try {
     const hashMessage = ethers.utils.hashMessage("Sign me in!");
+
     const signature = req.body.signature;
 
-    const recoveredAddress = await ethers.utils.verifyMessage(
-      hashMessage,
-      signature
-    );
-    console.log(recoveredAddress);
+    const pk = ethers.utils.recoverPublicKey(hashMessage, signature);
+    const recoveredAddress = ethers.utils.computeAddress(pk);
 
     const nfts = await nfKeyContract.getNftsByAddress(recoveredAddress);
     if (nfts.length !== 0) {
@@ -28,6 +26,7 @@ const verifyWallet = async (req, res, next) => {
       });
     }
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       message: "Internal Server Error",
       error: error.message,

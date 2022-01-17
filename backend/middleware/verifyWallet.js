@@ -10,15 +10,20 @@ const nfKeyContract = new ethers.Contract(
 
 const verifyWallet = async (req, res, next) => {
   try {
+    const signature = req.headers.signature;
+    if (!signature) {
+      return res.status(400).json({
+        message: "Signature is required",
+      });
+    }
+
     const hashMessage = ethers.utils.hashMessage("Sign me in!");
-
-    const signature = req.body.signature;
-
     const pk = ethers.utils.recoverPublicKey(hashMessage, signature);
     const recoveredAddress = ethers.utils.computeAddress(pk);
 
     const nfts = await nfKeyContract.getNftsByAddress(recoveredAddress);
     if (nfts.length !== 0) {
+      req.address = recoveredAddress;
       next();
     } else {
       res.status(401).json({

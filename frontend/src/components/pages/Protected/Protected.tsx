@@ -1,21 +1,38 @@
 import { useEffect, useState } from "react";
+import { login } from "../../../apiRequests/login";
 import { getProtectedResource } from "../../../apiRequests/protectedResource";
 import { useWalletProviderState } from "../../../context/WalletProvider";
 import ErrorBanner from "../../templates/ErrorBanner/ErrorBanner";
+
+const constructMessage = (timestamp: number, address: string) => `
+Welcome to NFKey!
+
+This request will not trigger a blockchain transaction or cost any gas fees.
+
+Your authentication status will reset after 24 hours.
+
+Address:${address}
+
+Timestamp:${timestamp}
+`;
 
 const Protected = () => {
   const { provider, isLoading } = useWalletProviderState();
   const [message, setMessage] = useState("");
   const [error, setError] = useState(null);
 
-  const signMessage = async (message: string) => {
+  const signMessage = async () => {
     const signer = provider.getSigner();
-    const signedMessage = await signer.signMessage(message);
-    console.log(signedMessage);
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const address = await signer.getAddress();
+    const message = constructMessage(timestamp, address);
+
+    const signature = await signer.signMessage(message);
+
     try {
-      const data = await getProtectedResource(signedMessage);
+      const data = await login({ message, signature });
       console.log(data);
-      setMessage(data.message);
     } catch (e) {
       console.log(e);
       setError(e.message);
@@ -24,7 +41,7 @@ const Protected = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      signMessage("Sign me in!");
+      signMessage();
     }
   }, [isLoading]);
 

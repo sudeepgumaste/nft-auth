@@ -1,13 +1,16 @@
-export const getProtectedResource = async (
-  signature: string
-): Promise<{ message: string }> => {
+export const getProtectedResource = async (): Promise<{ message: string }> => {
+  const token = localStorage.getItem("jwt");
+  if (!token) {
+    throw new Error("No token found");
+  }
+
   const response = await fetch(
     `${import.meta.env.VITE_BACKEND_URI as string}/protected`,
     {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        signature,
+        Authorization: `Bearer ${token}`,
       },
     }
   );
